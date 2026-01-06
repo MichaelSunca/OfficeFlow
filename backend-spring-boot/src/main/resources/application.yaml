@@ -1,3 +1,35 @@
 spring:
   application:
     name: backend
+
+  # 数据库连接配置
+  datasource:
+    # 这里的 localhost:3306 是你的本地地址，office_flow 是你之前在 Workbench 里创建的库名
+    # serverTimezone=Asia/Tokyo 确保时间显示的是日本当地时间
+    url: jdbc:mysql://localhost:3306/office_flow?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Tokyo&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+
+  # Spring Security 临时配置
+  # 因为引入了 Security 依赖，如果不配这个，系统会生成随机密码，不利于开发调试
+  security:
+    user:
+      name: admin
+      password: admin123
+
+# MyBatis-Plus 配置（这部分不在 spring: 层级下，注意缩进）
+mybatis-plus:
+  configuration:
+    # 核心：开启驼峰命名转换（例如：数据库 asset_name 对应 Java 的 assetName）
+    map-underscore-to-camel-case: true
+    # 将执行的 SQL 打印在控制台，方便你调试看有没有查错数据
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 开启主键自动增长（对应你建表时的 AUTO_INCREMENT）
+      id-type: auto
+
+# 日志配置
+logging:
+  level:
+    com.officeflow.backend: debug # 设置你的业务包为 debug 级别，能看到更详细的报错
