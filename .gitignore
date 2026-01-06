@@ -1,0 +1,37 @@
+# ==============================================================================
+# OfficeFlow Root Gitignore
+# ==============================================================================
+
+# --- IDE & System Files ---
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# --- Backend (Spring Boot) ---
+# 忽略 Maven 编译生成的 target 目录
+backend-spring-boot/target/
+# 忽略 Maven 包装器产生的临时文件
+backend-spring-boot/.mvn/wrapper/
+backend-spring-boot/mvnw
+backend-spring-boot/mvnw.cmd
+# 如果你有本地的测试配置文件，也可以忽略
+backend-spring-boot/src/main/resources/application-local.yml
+
+# --- Frontend (Vue 3 / Vite) ---
+# 忽略极其庞大的依赖包目录（绝对不能上传！）
+frontend-vue3/node_modules/
+# 忽略打包生成的静态资源目录
+frontend-vue3/dist/
+# 忽略环境变量本地配置文件
+frontend-vue3/.env.local
+frontend-vue3/.env.*.local
+# 忽略日志文件
+frontend-vue3/npm-debug.log*
+frontend-vue3/yarn-debug.log*
+frontend-vue3/yarn-error.log*
+
+# --- Local Environment & Secrets ---
+.env
+.env.local
