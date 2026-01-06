@@ -63,7 +63,12 @@ As a software engineer with **over 10 years of cross-platform experience** (Andr
 
 ### 1. Database Setup
 
-Execute the scripts located in `/sql/init.sql` to set up the database and seed initial data.
+To initialize the database, please execute the script in `/sql/init_db.sql`.
+
+This script will:
+* Create the `office_flow` database with the correct encoding (`utf8mb4`).
+* Set up the `sys_user` table structure.
+* Seed initial administrative data (Default credentials included in the script).
 
 ### 2. Backend Installation
 
