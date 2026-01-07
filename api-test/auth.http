@@ -14,7 +14,7 @@ Content-Type: application/json
 %}
 
 
-### 用户登录接口测试
+### 用户登录接口测试（password error）
 POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
