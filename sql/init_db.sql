@@ -40,7 +40,7 @@ CREATE TABLE `sys_user` (
 CREATE TABLE `bus_asset` (
                              `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
                              `asset_name` VARCHAR(100) NOT NULL COMMENT '资产名称',
-                             `asset_sn` VARCHAR(50) DEFAULT NULL UNIQUE COMMENT '资产唯一序列号',
+                             `asset_sn` VARCHAR(50) NOT NULL UNIQUE COMMENT '资产唯一序列号',
                              `category` VARCHAR(30) DEFAULT 'General' COMMENT '分类: 电子设备, 家具等',
                              `price` DECIMAL(10, 2) DEFAULT 0.00 COMMENT '采购价格',
                              `status` TINYINT DEFAULT 0 COMMENT '状态: 0=闲置, 1=领用中, 2=维修, 3=报废',
