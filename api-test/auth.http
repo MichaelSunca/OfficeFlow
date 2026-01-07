@@ -12,3 +12,13 @@ Content-Type: application/json
     client.global.set("auth_token", response.body.token);
     client.log("Token 已获取并存入变量: " + client.global.get("auth_token"));
 %}
+
+
+### 用户登录接口测试
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "1234567"
+}
