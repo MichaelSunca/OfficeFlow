@@ -29,7 +29,6 @@ public class Asset {
     /**
      * 唯一序列号或条形码，用于实物追踪
      */
-    @NotBlank(message = "资产序列号不能为空")
     private String assetSn;
 
     /**

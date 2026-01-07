@@ -1,6 +1,7 @@
 package com.officeflow.backend.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.officeflow.backend.dto.AssetClaimDTO;
 import com.officeflow.backend.entity.Asset;
 
 /**
@@ -8,4 +9,8 @@ import com.officeflow.backend.entity.Asset;
  * 继承 IService 可以获得 MyBatis-Plus 提供的更强大的批量操作方法
  */
 public interface AssetService extends IService<Asset> {
+    /**
+     * 领用资产
+     */
+    void claimAsset(AssetClaimDTO claimDTO, Long userId);
 }

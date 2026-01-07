@@ -2,18 +2,26 @@ package com.officeflow.backend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.officeflow.backend.dto.AssetClaimDTO;
 import com.officeflow.backend.entity.Asset;
+import com.officeflow.backend.entity.AssetRecord;
 import com.officeflow.backend.exception.BusinessException;
 import com.officeflow.backend.mapper.AssetMapper;
+import com.officeflow.backend.mapper.AssetRecordMapper;
 import com.officeflow.backend.service.AssetService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
  * 资产业务逻辑实现类
  */
 @Service
+@RequiredArgsConstructor // 依赖注入
 public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements AssetService {
+
+    private final AssetRecordMapper recordMapper;
 
     /**
      * 重写 save 方法，加入业务校验
@@ -38,5 +46,37 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
 
         // 3. 校验通过，执行真正的保存
         return super.save(entity);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class) // 开启事务，任何异常都回滚
+    public void claimAsset(AssetClaimDTO claimDTO, Long userId) {
+        // 1. 检查资产是否存在
+        Asset asset = this.getById(claimDTO.getAssetId());
+        if (asset == null) {
+            throw new BusinessException("操作失败：目标资产不存在");
+        }
+
+        // 2. 检查资产状态：只有“闲置(0)”的资产才能被领用
+        if (asset.getStatus() != 0) {
+            throw new BusinessException("操作失败：该资产当前状态无法领用（可能已被领用或维修中）");
+        }
+
+        // 3. 更新资产状态
+        asset.setStatus(1); // 1 = 领用中
+        asset.setUserId(userId);
+        this.updateById(asset);
+
+        // 4. 记录流转日志（写入 bus_record 表）
+        AssetRecord record = new AssetRecord();
+        record.setAssetId(asset.getId());
+        record.setUserId(userId);
+        record.setActionType("APPLY");
+        record.setRemark(claimDTO.getRemark());
+        record.setAuditStatus(1); // 简单起见，这里设置为直接通过
+
+        recordMapper.insert(record);
+
+        // 如果上面 recordMapper 插入报错，事务会保证 asset 的状态也会变回 0
     }
 }
