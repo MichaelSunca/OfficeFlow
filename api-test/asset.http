@@ -1,3 +1,17 @@
 ### 获取资产列表（直接引用变量）
 GET http://localhost:8080/api/assets/list
 Authorization: Bearer {{auth_token}}
+
+### 新增资产
+POST http://localhost:8080/api/assets/add
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "assetName": "Dell 27-inch Monitor",
+  "assetSn": "SN2026-M-001",
+  "category": "Electronics",
+  "price": 35000.00,
+  "location": "Room 501",
+  "purchaseDate": "2026-01-07"
+}

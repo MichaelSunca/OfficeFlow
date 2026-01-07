@@ -2,11 +2,9 @@ package com.officeflow.backend.controller;
 
 import com.officeflow.backend.common.Result;
 import com.officeflow.backend.entity.Asset;
-import com.officeflow.backend.mapper.AssetMapper;
+import com.officeflow.backend.service.AssetService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -18,16 +16,30 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AssetController {
 
-    private final AssetMapper assetMapper;
+    private final AssetService assetService;
 
     /**
-     * 获取系统中所有资产的列表
-     * @return 统一封装的 Result 对象，包含资产列表数据
+     * 获取所有资产列表
      */
     @GetMapping("/list")
     public Result<List<Asset>> list() {
-        // selectList(null) 代表无条件查询，即查询 bus_asset 表所有数据
-        List<Asset> list = assetMapper.selectList(null);
-        return Result.success(list);
+        return Result.success(assetService.list());
+    }
+
+    /**
+     * 新增资产
+     * @param asset 前端传来的资产 JSON 对象
+     */
+    @PostMapping("/add")
+    public Result<String> add(@RequestBody Asset asset) {
+        // 设置初始状态为 0 (闲置)
+        asset.setStatus(0);
+
+        boolean saved = assetService.save(asset);
+        if (saved) {
+            return Result.success("资产添加成功");
+        } else {
+            return Result.error(500, "资产添加失败");
+        }
     }
 }
