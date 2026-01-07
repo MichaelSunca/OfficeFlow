@@ -3,6 +3,7 @@ package com.officeflow.backend.controller;
 import com.officeflow.backend.common.Result;
 import com.officeflow.backend.dto.AssetAddDTO;
 import com.officeflow.backend.dto.AssetClaimDTO;
+import com.officeflow.backend.dto.AssetReturnDTO;
 import com.officeflow.backend.entity.Asset;
 import com.officeflow.backend.service.AssetService;
 import com.officeflow.backend.utils.SecurityUtils;
@@ -58,5 +59,15 @@ public class AssetController {
 
         assetService.claimAsset(claimDTO, currentUserId);
         return Result.success("领用成功");
+    }
+
+    /**
+     * 资产退库
+     */
+    @PostMapping("/return")
+    public Result<String> returnAsset(@Valid @RequestBody AssetReturnDTO returnDTO) {
+        Long currentUserId = SecurityUtils.getUserId();
+        assetService.returnAsset(returnDTO, currentUserId);
+        return Result.success("退库成功，资产已入库");
     }
 }

@@ -52,3 +52,14 @@ Content-Type: application/json
   "assetId": 1,
   "remark": "再次尝试领用"
 }
+
+
+### 资产退库 (测试权限校验)
+POST http://localhost:8080/api/assets/return
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "assetId": 1,
+  "remark": "设备完好，申请入库"
+}

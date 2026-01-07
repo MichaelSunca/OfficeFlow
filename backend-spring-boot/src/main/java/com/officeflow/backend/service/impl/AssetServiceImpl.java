@@ -1,8 +1,10 @@
 package com.officeflow.backend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.officeflow.backend.dto.AssetClaimDTO;
+import com.officeflow.backend.dto.AssetReturnDTO;
 import com.officeflow.backend.entity.Asset;
 import com.officeflow.backend.entity.AssetRecord;
 import com.officeflow.backend.exception.BusinessException;
@@ -78,5 +80,35 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         recordMapper.insert(record);
 
         // 如果上面 recordMapper 插入报错，事务会保证 asset 的状态也会变回 0
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void returnAsset(AssetReturnDTO returnDTO, Long userId) {
+        // 1. 获取并校验是否存在
+        Asset asset = this.getById(returnDTO.getAssetId());
+        if (asset == null) throw new BusinessException("资产不存在");
+
+        // 2. 状态校验
+        if (asset.getStatus() != 1) throw new BusinessException("该资产不在领用状态");
+
+        // 3. 归属校验
+        if (!userId.equals(asset.getUserId())) throw new BusinessException("你不是当前领用人");
+
+        // 4. 执行更新（显式清空用户ID）
+        this.update(new LambdaUpdateWrapper<Asset>()
+                .eq(Asset::getId, asset.getId())
+                .set(Asset::getStatus, 0)
+                .set(Asset::getUserId, null)
+        );
+
+        // 5. 记录流转日志
+        AssetRecord record = new AssetRecord();
+        record.setAssetId(asset.getId());
+        record.setUserId(userId);
+        record.setActionType("RETURN");
+        record.setRemark(returnDTO.getRemark());
+        record.setAuditStatus(1);
+        recordMapper.insert(record);
     }
 }
