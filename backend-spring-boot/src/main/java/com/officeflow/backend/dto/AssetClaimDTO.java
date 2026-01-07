@@ -1,6 +1,6 @@
 package com.officeflow.backend.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class AssetClaimDTO {
 
-    @NotBlank(message = "领用资产ID不能为空")
+    @NotNull(message = "领用资产ID不能为空")
     private Long assetId;
 
     /**

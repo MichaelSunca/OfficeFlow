@@ -29,3 +29,26 @@ Content-Type: application/json
   "location": "Room 501",
   "purchaseDate": "2026-01-07"
 }
+
+
+
+### 资产领用
+# 注意：这里的 assetId 请根据上面 list 接口返回的真实 ID 修改
+POST http://localhost:8080/api/assets/claim
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "assetId": 1,
+  "remark": "初次领用"
+}
+
+### 异常测试：重复领用（预期报错）
+POST http://localhost:8080/api/assets/claim
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "assetId": 1,
+  "remark": "再次尝试领用"
+}

@@ -5,6 +5,7 @@ import com.officeflow.backend.dto.AssetAddDTO;
 import com.officeflow.backend.dto.AssetClaimDTO;
 import com.officeflow.backend.entity.Asset;
 import com.officeflow.backend.service.AssetService;
+import com.officeflow.backend.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -52,9 +53,8 @@ public class AssetController {
      */
     @PostMapping("/claim")
     public Result<String> claim(@Valid @RequestBody AssetClaimDTO claimDTO) {
-        // 假设你已经能从 SecurityContextHolder 拿到当前登录用户的 ID
-        // 临时测试可以直接传 admin 的 ID: 1L
-        Long currentUserId = 1L;
+        // 从 SecurityContextHolder 拿到当前登录用户的 ID
+        Long currentUserId = SecurityUtils.getUserId();
 
         assetService.claimAsset(claimDTO, currentUserId);
         return Result.success("领用成功");
