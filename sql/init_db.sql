@@ -75,14 +75,14 @@ CREATE TABLE `bus_record` (
 -- 系统用户 (密码均为 123456)
 INSERT INTO `sys_user` (`username`, `password`, `nickname`, `role`, `status`)
 VALUES
-    ('admin', '$2a$10$hG8cZC2n8YgH8w6bGq7w0uW3rXb8f0p0qzG8p6F6ZqkQ8sJ0yKQm2', 'System Admin', 'ADMIN', 1),
-    ('user01', '$2a$10$hG8cZC2n8YgH8w6bGq7w0uW3rXb8f0p0qzG8p6F6ZqkQ8sJ0yKQm2', 'Standard Employee', 'USER', 1);
+    ('admin', '$2a$10$ZwsWSvK14ulHCw.sxFB/zetSxoknalsSFoEU9PKLBmnuiShN6TRCW', 'System Admin', 'ADMIN', 1),
+    ('user01', '$2a$10$ZwsWSvK14ulHCw.sxFB/zetSxoknalsSFoEU9PKLBmnuiShN6TRCW', 'Standard Employee', 'USER', 1);
 
 -- 初始资产
 INSERT INTO `bus_asset` (`asset_name`, `asset_sn`, `category`, `price`, `status`, `location`)
 VALUES
     ('MacBook Pro 14"', 'SN2026001', 'Electronics', 250000.00, 0, 'Storage Room A'),
-    ('Herman Miller Aeron', 'SN2026002', 'Furniture', 180000.00, 1, 'Office Area B');
+    ('Herman Miller Aeron', 'SN2026002', 'Furniture', 180000.00, 0, 'Office Area B');
 
 -- -----------------------------------------------------------------------------
 -- Initialization Complete

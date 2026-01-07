@@ -1,9 +1,11 @@
 package com.officeflow.backend.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.officeflow.backend.dto.AssetClaimDTO;
 import com.officeflow.backend.dto.AssetReturnDTO;
 import com.officeflow.backend.entity.Asset;
+import com.officeflow.backend.vo.AssetVO;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -17,4 +19,6 @@ public interface AssetService extends IService<Asset> {
     void claimAsset(AssetClaimDTO claimDTO, Long userId);
 
     void returnAsset(AssetReturnDTO returnDTO, Long userId);
+
+    Page<AssetVO> getAssetListPage(int current, int size);
 }

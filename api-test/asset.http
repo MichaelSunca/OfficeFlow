@@ -1,5 +1,5 @@
-### 获取资产列表（直接引用变量）
-GET http://localhost:8080/api/assets/list
+### 获取资产分页列表（带用户信息）
+GET http://localhost:8080/api/assets/list?current=1&size=10
 Authorization: Bearer {{auth_token}}
 
 ### 新增资产
@@ -63,3 +63,4 @@ Content-Type: application/json
   "assetId": 1,
   "remark": "设备完好，申请入库"
 }
+

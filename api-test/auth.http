@@ -9,16 +9,16 @@ Content-Type: application/json
 
 > {%
     // 这是一个小脚本：登录成功后自动把返回的 token 存入全局变量
-    client.global.set("auth_token", response.body.token);
+    client.global.set("auth_token", response.body.data.token);
     client.log("Token 已获取并存入变量: " + client.global.get("auth_token"));
 %}
 
 
 ### 用户登录接口测试（password error）
-POST http://localhost:8080/api/auth/login
-Content-Type: application/json
-
-{
-  "username": "admin",
-  "password": "1234567"
-}
+#POST http://localhost:8080/api/auth/login
+#Content-Type: application/json
+#
+#{
+#  "username": "admin",
+#  "password": "1234567"
+#}

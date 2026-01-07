@@ -1,5 +1,6 @@
 package com.officeflow.backend.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.officeflow.backend.common.Result;
 import com.officeflow.backend.dto.AssetAddDTO;
 import com.officeflow.backend.dto.AssetClaimDTO;
@@ -7,6 +8,7 @@ import com.officeflow.backend.dto.AssetReturnDTO;
 import com.officeflow.backend.entity.Asset;
 import com.officeflow.backend.service.AssetService;
 import com.officeflow.backend.utils.SecurityUtils;
+import com.officeflow.backend.vo.AssetVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -24,12 +26,11 @@ public class AssetController {
 
     private final AssetService assetService;
 
-    /**
-     * 获取所有资产列表
-     */
     @GetMapping("/list")
-    public Result<List<Asset>> list() {
-        return Result.success(assetService.list());
+    public Result<Page<AssetVO>> list(
+            @RequestParam(defaultValue = "1") int current,
+            @RequestParam(defaultValue = "10") int size) {
+        return Result.success(assetService.getAssetListPage(current, size));
     }
 
     /**

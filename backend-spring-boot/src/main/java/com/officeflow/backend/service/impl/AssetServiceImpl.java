@@ -2,6 +2,7 @@ package com.officeflow.backend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.officeflow.backend.dto.AssetClaimDTO;
 import com.officeflow.backend.dto.AssetReturnDTO;
@@ -11,6 +12,7 @@ import com.officeflow.backend.exception.BusinessException;
 import com.officeflow.backend.mapper.AssetMapper;
 import com.officeflow.backend.mapper.AssetRecordMapper;
 import com.officeflow.backend.service.AssetService;
+import com.officeflow.backend.vo.AssetVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -110,5 +112,11 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         record.setRemark(returnDTO.getRemark());
         record.setAuditStatus(1);
         recordMapper.insert(record);
+    }
+
+    @Override
+    public Page<AssetVO> getAssetListPage(int current, int size) {
+        Page<AssetVO> page = new Page<>(current, size);
+        return baseMapper.selectAssetPage(page);
     }
 }
