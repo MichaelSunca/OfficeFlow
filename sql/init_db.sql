@@ -40,7 +40,7 @@ CREATE TABLE `sys_user` (
 INSERT INTO `sys_user` (`username`, `password`, `nickname`, `role`, `status`)
 VALUES (
            'admin',
-           '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMp.H.NnKCU6',
+           '$2a$10$hG8cZC2n8YgH8w6bGq7w0uW3rXb8f0p0qzG8p6F6ZqkQ8sJ0yKQm2',
            'System Administrator',
            'ADMIN',
            1
@@ -50,7 +50,7 @@ VALUES (
 INSERT INTO `sys_user` (`username`, `password`, `nickname`, `role`, `status`)
 VALUES (
            'user01',
-           '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMp.H.NnKCU6',
+           '$2a$10$hG8cZC2n8YgH8w6bGq7w0uW3rXb8f0p0qzG8p6F6ZqkQ8sJ0yKQm2',
            'Standard Employee',
            'USER',
            1

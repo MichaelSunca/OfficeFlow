@@ -1,0 +1,3 @@
+### 获取用户列表（直接引用变量）
+GET http://localhost:8080/api/users/list
+Authorization: Bearer {{auth_token}}
