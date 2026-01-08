@@ -7,7 +7,7 @@ import lombok.Data;
  * Data Transfer Object for Login
  */
 @Data
-public class LoginRequest {
+public class LoginDTO {
 
     @NotBlank(message = "Username cannot be empty")
     private String username;

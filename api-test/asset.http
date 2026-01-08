@@ -2,36 +2,6 @@
 GET http://localhost:8080/api/assets/list?current=1&size=10
 Authorization: Bearer {{auth_token}}
 
-### 新增资产
-POST http://localhost:8080/api/assets/add
-Authorization: Bearer {{auth_token}}
-Content-Type: application/json
-
-{
-  "assetName": "Dell 27-inch Monitor",
-  "assetSn": "SN2026-M-001",
-  "category": "Electronics",
-  "price": 35000.00,
-  "location": "Room 501",
-  "purchaseDate": "2026-01-07"
-}
-
-### 新增资产（error 空 SN）
-POST http://localhost:8080/api/assets/add
-Authorization: Bearer {{auth_token}}
-Content-Type: application/json
-
-{
-  "assetName": "Dell 27-inch Monitor",
-  "assetSn": "",
-  "category": "Macbook m1",
-  "price": 38000.00,
-  "location": "Room 501",
-  "purchaseDate": "2026-01-07"
-}
-
-
-
 ### 资产领用
 # 注意：这里的 assetId 请根据上面 list 接口返回的真实 ID 修改
 POST http://localhost:8080/api/assets/claim
@@ -64,3 +34,52 @@ Content-Type: application/json
   "remark": "设备完好，申请入库"
 }
 
+### 新增资产 - 成功示例
+POST http://localhost:8080/api/assets/add
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "assetName": "MacBook Pro 16",
+  "assetSn": "SN-MBP-2026-001",
+  "category": "Electronics",
+  "price": 2899.99,
+  "location": "Office A-101",
+  "purchaseDate": "2026-01-08"
+}
+
+### 新增资产 - 失败示例 (触发 @Null 校验，因为带了 ID)
+POST http://localhost:8080/api/assets/add
+Content-Type: application/json
+
+{
+  "id": 1,
+  "assetName": "错误的新增",
+  "assetSn": "SN-ERROR-001",
+  "price": 100
+}
+
+### 更新资产 - 成功示例
+PUT http://localhost:8080/api/assets/update
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "id": 1,
+  "assetName": "MacBook Pro 16 (已升级内存)",
+  "assetSn": "SN-MBP-2026-001",
+  "category": "Electronics",
+  "price": 3200.00,
+  "location": "Office A-101",
+  "purchaseDate": "2026-01-08"
+}
+
+### 更新资产 - 失败示例 (触发 @NotNull 校验，没带 ID)
+PUT http://localhost:8080/api/assets/update
+Content-Type: application/json
+
+{
+  "assetName": "没有ID的更新",
+  "assetSn": "SN-MBP-2026-001",
+  "price": 3200.00
+}

@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.officeflow.backend.dto.AssetClaimDTO;
-import com.officeflow.backend.dto.AssetReturnDTO;
+import com.officeflow.backend.dto.AssetFormDTO;
+import com.officeflow.backend.dto.AssetOperateDTO;
 import com.officeflow.backend.entity.Asset;
 import com.officeflow.backend.entity.AssetRecord;
 import com.officeflow.backend.exception.BusinessException;
@@ -14,6 +14,8 @@ import com.officeflow.backend.mapper.AssetRecordMapper;
 import com.officeflow.backend.service.AssetService;
 import com.officeflow.backend.vo.AssetVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -21,6 +23,7 @@ import org.springframework.util.StringUtils;
 /**
  * 资产业务逻辑实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor // 依赖注入
 public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements AssetService {
@@ -54,7 +57,7 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
 
     @Override
     @Transactional(rollbackFor = Exception.class) // 开启事务，任何异常都回滚
-    public void claimAsset(AssetClaimDTO claimDTO, Long userId) {
+    public void claimAsset(AssetOperateDTO claimDTO, Long userId) {
         // 1. 检查资产是否存在
         Asset asset = this.getById(claimDTO.getAssetId());
         if (asset == null) {
@@ -86,7 +89,7 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void returnAsset(AssetReturnDTO returnDTO, Long userId) {
+    public void returnAsset(AssetOperateDTO returnDTO, Long userId) {
         // 1. 获取并校验是否存在
         Asset asset = this.getById(returnDTO.getAssetId());
         if (asset == null) throw new BusinessException("资产不存在");
@@ -112,6 +115,57 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         record.setRemark(returnDTO.getRemark());
         record.setAuditStatus(1);
         recordMapper.insert(record);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void saveAsset(AssetFormDTO dto) {
+        // 1. 唯一性检查：SN 码不能重复
+        Long count = this.lambdaQuery()
+                .eq(Asset::getAssetSn, dto.getAssetSn())
+                .count();
+        if (count > 0) {
+            throw new BusinessException("资产序列号(SN)已存在，请勿重复录入");
+        }
+
+        // 2. DTO 转 Entity
+        Asset asset = new Asset();
+        BeanUtils.copyProperties(dto, asset);
+
+        // 3. 设置初始状态
+        asset.setStatus(0); // 默认为闲置
+
+        // 4. 执行保存
+        this.save(asset);
+        log.info("新增资产成功，SN: {}", dto.getAssetSn());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateAsset(AssetFormDTO dto) {
+        // 1. 检查目标资产是否存在
+        Asset existingAsset = this.getById(dto.getId());
+        if (existingAsset == null) {
+            throw new BusinessException("未找到待修改的资产");
+        }
+
+        // 2. 如果修改了 SN 码，需要校验新 SN 是否被别人占用
+        if (!existingAsset.getAssetSn().equals(dto.getAssetSn())) {
+            Long count = this.lambdaQuery()
+                    .eq(Asset::getAssetSn, dto.getAssetSn())
+                    .ne(Asset::getId, dto.getId())
+                    .count();
+            if (count > 0) {
+                throw new BusinessException("新的序列号(SN)已被其他资产使用");
+            }
+        }
+
+        // 3. 属性更新
+        BeanUtils.copyProperties(dto, existingAsset);
+
+        // 4. 执行更新
+        this.updateById(existingAsset);
+        log.info("更新资产成功，ID: {}", dto.getId());
     }
 
     @Override
