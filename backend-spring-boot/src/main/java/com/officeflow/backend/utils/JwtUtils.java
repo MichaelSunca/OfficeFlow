@@ -53,6 +53,10 @@ public class JwtUtils {
      * @return 包含用户信息的 Claims
      */
     public Claims parseToken(String token) {
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7); // 截取 "Bearer " 之后的真正 JWT 内容
+        }
+
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
