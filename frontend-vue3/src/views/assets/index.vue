@@ -52,7 +52,7 @@
 
         <el-table-column prop="location" label="存放地点" min-width="150" />
 
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button
                 link
@@ -70,6 +70,10 @@
                 @click="handleTransfer(row, 'RETURN')"
             >
               退库
+            </el-button>
+
+            <el-button link type="info" @click="qrCodeRef.open(row)">
+              二维码
             </el-button>
 
             <el-button link type="success" @click="timelineRef.open(row.id)">
@@ -98,6 +102,7 @@
 
     <AssetDialog ref="assetDialogRef" @refresh="fetchData" />
     <AssetTimeline ref="timelineRef" />
+    <AssetQrCode ref="qrCodeRef" />
   </div>
 </template>
 
@@ -107,6 +112,7 @@ import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from "element-plus"
 import AssetDialog from './components/AssetDialog.vue'
 import AssetTimeline from './components/AssetTimeline.vue'
+import AssetQrCode from './components/AssetQrCode.vue' // 💡 引入新组件
 import {
   getAssetListApi,
   claimAssetApi,
@@ -123,6 +129,7 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const assetDialogRef = ref()
 const timelineRef = ref()
+const qrCodeRef = ref()
 
 // 搜索查询参数
 const searchQuery = reactive({
@@ -260,7 +267,6 @@ onMounted(() => {
   font-style: italic;
 }
 
-/* 深度选择器修改表头背景色 */
 :deep(.el-table th) {
   background-color: #f5f7fa !important;
   color: #606266;
