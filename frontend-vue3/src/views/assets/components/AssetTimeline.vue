@@ -1,6 +1,6 @@
 <template>
-  <el-dialog v-model="visible" title="资产流转时间轴" width="500px" destroy-on-close>
-    <div v-loading="loading" style="padding: 10px 20px">
+  <el-dialog v-model="visible" title="资产流转历史轨迹" width="600px" destroy-on-close>
+    <div v-loading="loading" class="timeline-wrapper">
       <el-empty v-if="records.length === 0" description="暂无流转记录" />
 
       <el-timeline v-else>
@@ -8,21 +8,36 @@
             v-for="(item, index) in records"
             :key="index"
             :type="getTimelineItemType(item.actionType)"
-            :hollow="true"
-            :timestamp="item.createTime"
+            :timestamp="formatDate(item.createTime)"
             placement="top"
         >
           <el-card shadow="never" class="record-card">
-            <h4>{{ getActionName(item.actionType) }}</h4>
-            <p v-if="item.remark" class="remark-text">
-              <strong>备注：</strong>{{ item.remark }}
-            </p>
-            <div class="status-change">
-              <el-tag size="small" type="info">{{ getStatusLabel(item.oldStatus) }}</el-tag>
-              <el-icon class="arrow-icon"><Right /></el-icon>
-              <el-tag size="small" :type="getStatusTag(item.newStatus)">
-                {{ getStatusLabel(item.newStatus) }}
+            <div class="card-header-row">
+              <span class="action-name">{{ getActionName(item.actionType) }}</span>
+              <el-tag size="small" effect="light" type="info">
+                操作人：{{ item.userNickname || '系统管理员' }}
               </el-tag>
+            </div>
+
+            <div v-if="item.remark" class="remark-box">
+              <el-icon><ChatDotRound /></el-icon>
+              <span class="remark-text">{{ item.remark }}</span>
+            </div>
+
+            <div class="status-track">
+              <div class="status-node">
+                <span class="label">原状态</span>
+                <el-tag size="small" type="info" border>{{ getStatusLabel(item.oldStatus) }}</el-tag>
+              </div>
+
+              <el-icon class="arrow-icon"><Right /></el-icon>
+
+              <div class="status-node">
+                <span class="label">新状态</span>
+                <el-tag size="small" :type="getStatusTag(item.newStatus)" border>
+                  {{ getStatusLabel(item.newStatus) }}
+                </el-tag>
+              </div>
             </div>
           </el-card>
         </el-timeline-item>
@@ -34,78 +49,133 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { getAssetRecordsApi } from '@/api/asset'
-import { Right } from '@element-plus/icons-vue'
+import { Right, ChatDotRound } from '@element-plus/icons-vue'
+import dayjs from 'dayjs' // 建议使用 dayjs 处理日期
 
 const visible = ref(false)
 const loading = ref(false)
 const records = ref<any[]>([])
 
-// 打开弹窗并加载数据
+// 暴露给父组件的打开方法
 const open = async (assetId: number) => {
   visible.value = true
   loading.value = true
   try {
     const res = await getAssetRecordsApi(assetId)
     records.value = res || []
+  } catch (error) {
+    console.error('获取履历失败', error)
   } finally {
     loading.value = false
   }
 }
 
-// 格式化动作名称
+// 格式化日期
+const formatDate = (date: string) => {
+  return date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : ''
+}
+
+// 动作映射
 const getActionName = (type: string) => {
-  const map: any = {
+  const map: Record<string, string> = {
     CLAIM: '资产领用',
     RETURN: '资产退库',
-    REPAIR: '开始维修',
-    ADD: '初始入库',
-    DELETE: '逻辑删除'
+    REPAIR: '报修登记',
+    ADD: '入库登记',
+    DELETE: '资产下架'
   }
   return map[type] || type
+}
+
+// 状态文本映射
+const getStatusLabel = (status: any) => {
+  if (status === null || status === undefined) return '无'
+  const s = Number(status)
+  const map: Record<number, string> = {
+    0: '闲置',
+    1: '领用中',
+    2: '维修中',
+    3: '已报废'
+  }
+  return map[s] || `未知(${s})`
+}
+
+// 状态样式映射
+const getStatusTag = (status: any) => {
+  const s = Number(status)
+  const map: any = { 0: 'success', 1: 'warning', 2: 'danger', 3: 'info' }
+  return map[s] || ''
 }
 
 // 时间线节点颜色
 const getTimelineItemType = (type: string) => {
   if (type === 'CLAIM') return 'primary'
   if (type === 'RETURN') return 'success'
-  if (type === 'REPAIR') return 'warning'
+  if (type === 'DELETE') return 'danger'
   return 'info'
-}
-
-// 状态标签文字
-const getStatusLabel = (status: number) => {
-  if (status === 0) return '闲置'
-  if (status === 1) return '领用中'
-  if (status === 2) return '维修中'
-  return '未知'
-}
-
-// 状态标签颜色
-const getStatusTag = (status: number) => {
-  const map: any = { 0: 'info', 1: 'success', 2: 'danger' }
-  return map[status] || ''
 }
 
 defineExpose({ open })
 </script>
 
 <style scoped>
-.record-card h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
+.timeline-wrapper {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 10px 15px;
 }
-.remark-text {
+
+.record-card {
+  border-radius: 8px;
+  background-color: #fcfcfc;
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.action-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #303133;
+}
+
+.remark-box {
+  background: #f4f4f5;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: #606266;
   font-size: 13px;
-  color: #666;
-  margin-bottom: 8px;
 }
-.status-change {
+
+.status-track {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 15px;
+  padding-top: 8px;
+  border-top: 1px dashed #ebeef5;
 }
+
+.status-node {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-node .label {
+  font-size: 11px;
+  color: #909399;
+}
+
 .arrow-icon {
-  font-size: 12px;
-  color: #999;
+  margin-top: 15px;
+  color: #dcdfe6;
 }
 </style>

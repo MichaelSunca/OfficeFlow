@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.officeflow.backend.common.enums.AssetStatusEnum;
 import com.officeflow.backend.dto.AssetFormDTO;
 import com.officeflow.backend.dto.AssetOperateDTO;
 import com.officeflow.backend.entity.Asset;
@@ -63,7 +64,10 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
     public void claimAsset(AssetOperateDTO claimDTO, Long userId) {
         Asset asset = this.getById(claimDTO.getAssetId());
         if (asset == null) throw new BusinessException("操作失败：目标资产不存在");
-        if (asset.getStatus() != 0) throw new BusinessException("该资产当前无法领用");
+        if (!asset.getStatus().equals(AssetStatusEnum.IDLE.getCode())) {
+            throw new BusinessException("操作失败：该资产当前状态为[" +
+                    AssetStatusEnum.getDescriptionByCode(asset.getStatus()) + "]，无法领用");
+        }
 
         Integer oldStatus = asset.getStatus();
         Integer newStatus = 1; // 领用中
