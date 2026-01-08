@@ -36,8 +36,8 @@
 
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="statusMap[row.status]?.type">
-              {{ statusMap[row.status]?.text }}
+            <el-tag :type="row.isPending ? 'primary' : statusMap[row.status]?.type">
+              {{ row.isPending ? '审批中' : statusMap[row.status]?.text }}
             </el-tag>
           </template>
         </el-table-column>
@@ -58,9 +58,10 @@
                 link
                 type="primary"
                 v-if="row.status === 0"
+                :disabled="row.isPending"
                 @click="handleTransfer(row, 'CLAIM')"
             >
-              领用
+              {{ row.isPending ? '审批中' : '领用' }}
             </el-button>
 
             <el-button
@@ -137,11 +138,12 @@ const searchQuery = reactive({
   status: null as number | null
 })
 
-const statusMap: Record<number, { text: string, type: 'success' | 'warning' | 'danger' | 'info' }> = {
+const statusMap: Record<number, { text: string, type: 'success' | 'warning' | 'danger' | 'info' | 'primary' }> = {
   0: { text: '闲置', type: 'success' },
   1: { text: '领用中', type: 'warning' },
   2: { text: '维修', type: 'danger' },
-  3: { text: '报废', type: 'info' }
+  3: { text: '报废', type: 'info' },
+  4: { text: '审批中', type: 'primary' }
 }
 
 // --- 核心业务逻辑 ---

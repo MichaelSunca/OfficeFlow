@@ -22,6 +22,8 @@ public interface AssetService extends IService<Asset> {
 
     void returnAsset(AssetOperateDTO returnDTO, Long userId);
 
+    void auditClaim(Long recordId, Integer auditResult, String auditRemark);
+
     /**
      * 新增资产
      */
@@ -35,4 +37,6 @@ public interface AssetService extends IService<Asset> {
     List<AssetRecordVO> getAssetRecords(Long assetId);
 
     Page<AssetVO> getAssetListPage(int current, int size, String assetName, Integer status);
+
+    Page<AssetRecordVO> getPendingAuditPage(int current, int size);
 }

@@ -23,6 +23,16 @@ const routes: Array<RouteRecordRaw> = [
                 name: 'UserSearch',
                 component: () => import('@/views/user/UserSearch.vue'),
                 meta: { title: '职员查询' }
+            },
+            {
+                path: 'audit',
+                name: 'AssetAudit',
+                component: () => import('@/views/assets/audit/index.vue'),
+                meta: {
+                    title: '领用审批',
+                    icon: 'Checked',
+                    // 如果有权限控制，可以在这里加 roles: ['admin']
+                }
             }
         ]
     }

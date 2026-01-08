@@ -46,6 +46,7 @@ export interface AssetVO {
     purchaseDate: string
     userNickname: string | null
     createTime: string
+    isPending: boolean
 }
 
 export interface PageResult<T> {
@@ -105,4 +106,14 @@ export const returnAssetApi = (data: AssetOperateDTO) => {
  */
 export const getAssetRecordsApi = (assetId: number) => {
     return http.get<any[]>(`/assets/records/${assetId}`)
+}
+
+// 获取待审批列表
+export const getPendingAuditListApi = (params: any) => {
+    return http.get('/assets/audit/list', { params })
+}
+
+// 提交审批结果
+export const auditClaimApi = (data: { recordId: number, auditResult: number, auditRemark: string }) => {
+    return http.post('/assets/audit/handle', data)
 }

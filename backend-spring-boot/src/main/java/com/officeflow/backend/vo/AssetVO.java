@@ -15,6 +15,11 @@ public class AssetVO {
     private String location;
     private BigDecimal price;
     private LocalDate purchaseDate;
+    /**
+     * 是否存在待处理的申请
+     * 在 SQL 中通过判断该资产在 bus_record 中是否有 audit_status = 0 的记录来赋值
+     */
+    private Boolean isPending;
 
     // 来自 sys_user 表的信息
     private Long userId;

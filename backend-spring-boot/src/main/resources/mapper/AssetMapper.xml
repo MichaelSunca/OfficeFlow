@@ -6,7 +6,12 @@
         SELECT
         a.*,
         u.username as user_name,
-        u.nickname as user_nickname
+        u.nickname as user_nickname,
+        (SELECT COUNT(1)
+        FROM bus_record r
+        WHERE r.asset_id = a.id
+        AND r.audit_status = 0
+        AND r.action_type = 'CLAIM') > 0 as is_pending
         FROM bus_asset a
         LEFT JOIN sys_user u ON a.user_id = u.id
         <where>

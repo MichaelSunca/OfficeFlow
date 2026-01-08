@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.officeflow.backend.common.enums.AssetStatusEnum;
+import com.officeflow.backend.common.enums.AuditStatusEnum;
 import com.officeflow.backend.dto.AssetFormDTO;
 import com.officeflow.backend.dto.AssetOperateDTO;
 import com.officeflow.backend.entity.Asset;
@@ -59,37 +60,55 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         return super.save(entity);
     }
 
+    /**
+     * 领用申请 (进入审批流)
+     * 逻辑：校验资产状态 -> 校验是否重复申请 -> 插入待审批记录
+     */
     @Override
-    @Transactional(rollbackFor = Exception.class) // 开启事务，任何异常都回滚
+    @Transactional(rollbackFor = Exception.class)
     public void claimAsset(AssetOperateDTO claimDTO, Long userId) {
+        // 1. 获取资产信息并校验是否存在
+        // 💡 这里可以使用 baseMapper (因为继承了 ServiceImpl) 或显式注入的 assetMapper
         Asset asset = this.getById(claimDTO.getAssetId());
-        if (asset == null) throw new BusinessException("操作失败：目标资产不存在");
-        if (!asset.getStatus().equals(AssetStatusEnum.IDLE.getCode())) {
-            throw new BusinessException("操作失败：该资产当前状态为[" +
-                    AssetStatusEnum.getDescriptionByCode(asset.getStatus()) + "]，无法领用");
+        if (asset == null) {
+            throw new BusinessException("操作失败：目标资产不存在");
         }
 
-        Integer oldStatus = asset.getStatus();
-        Integer newStatus = 1; // 领用中
+        // 2. 状态校验：只有“闲置”状态的资产可以发起领用申请
+        if (!AssetStatusEnum.IDLE.getCode().equals(asset.getStatus())) {
+            throw new BusinessException("操作失败：该资产当前处于 [" +
+                    AssetStatusEnum.getDescriptionByCode(asset.getStatus()) + "] 状态，无法申请领用");
+        }
 
-        // 更新资产状态
-        asset.setStatus(1); // 1 = 领用中
-        asset.setUserId(userId);
-        this.updateById(asset);
+        // 3. 并发安全校验：检查数据库中是否已经存在该资产的“待审批”记录
+        // 防止多个人同时针对同一个闲置资产点击“领用”
+        Long pendingCount = assetRecordMapper.selectCount(new LambdaQueryWrapper<AssetRecord>()
+                .eq(AssetRecord::getAssetId, asset.getId())
+                .eq(AssetRecord::getAuditStatus, AuditStatusEnum.PENDING.getCode()));
 
-        // 4. 记录流转日志（写入 bus_record 表）
+        if (pendingCount > 0) {
+            throw new BusinessException("操作失败：该资产已有正在处理中的领用申请，请勿重复提交");
+        }
+
+        // 4. 记录流转日志（核心：设置审核状态为 PENDING）
         AssetRecord record = new AssetRecord();
         record.setAssetId(asset.getId());
-        record.setUserId(userId);
-        record.setActionType("APPLY");
-        record.setOldStatus(oldStatus); // 赋值旧状态 (0)
-        record.setNewStatus(newStatus); // 赋值新状态 (1)
+        record.setUserId(userId); // 申请人 ID
+        record.setActionType("CLAIM"); // 动作类型：领用
+
+        // 状态变迁描述：从 闲置(0) 变为 领用中(1)
+        record.setOldStatus(AssetStatusEnum.IDLE.getCode());
+        record.setNewStatus(AssetStatusEnum.USING.getCode());
+
+        // 💡 审批流关键点：
+        record.setAuditStatus(AuditStatusEnum.PENDING.getCode()); // 设为 0 (待审批)
         record.setRemark(claimDTO.getRemark());
-        record.setAuditStatus(1); // 简单起见，这里设置为直接通过
 
         assetRecordMapper.insert(record);
 
-        // 如果上面 recordMapper 插入报错，事务会保证 asset 的状态也会变回 0
+        // 💡 注意：此时【不更新】bus_asset 表的状态。
+        // 资产依然维持 status = 0，直到管理员在 auditClaim 方法中点下“通过”。
+        log.info("用户 {} 提交了资产 {} 的领用申请，等待管理员审批", userId, asset.getAssetName());
     }
 
     @Override
@@ -187,5 +206,74 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
     public List<AssetRecordVO> getAssetRecords(Long assetId) {
         // 建议在 AssetRecordMapper 中写一个专门的 SQL 关联查询
         return assetRecordMapper.selectRecordListWithUserInfo(assetId);
+    }
+
+    /**
+     * 审批领用申请
+     * 逻辑：校验记录状态 -> 处理审批结果 -> 更新资产权属 -> 追加审批备注
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void auditClaim(Long recordId, Integer auditResult, String auditRemark) {
+        // 1. 获取申请记录并校验
+        AssetRecord record = assetRecordMapper.selectById(recordId);
+        if (record == null) {
+            throw new BusinessException("操作失败：申请记录不存在");
+        }
+
+        // 💡 核心校验：只有“待审批”状态的记录才能进行审批操作
+        if (!AuditStatusEnum.PENDING.getCode().equals(record.getAuditStatus())) {
+            throw new BusinessException("操作失败：该申请已被处理（当前状态：" +
+                    AuditStatusEnum.getDescriptionByCode(record.getAuditStatus()) + "）");
+        }
+
+        // 2. 获取关联的资产信息
+        Asset asset = baseMapper.selectById(record.getAssetId());
+        if (asset == null) {
+            throw new BusinessException("操作失败：关联资产已不存在");
+        }
+
+        // 3. 处理审批分歧
+        if (AuditStatusEnum.PASSED.getCode().equals(auditResult)) {
+            // --- 情况 A: 审批通过 ---
+            log.info("资产领用申请通过：记录ID {}, 资产ID {}, 领用人ID {}", recordId, asset.getId(), record.getUserId());
+
+            // 更新资产主表状态和权属
+            asset.setStatus(AssetStatusEnum.USING.getCode()); // 设为 1 (领用中)
+            asset.setUserId(record.getUserId());             // 将资产归属给当时的申请人
+            baseMapper.updateById(asset);
+
+            // 更新记录状态为已通过
+            record.setAuditStatus(AuditStatusEnum.PASSED.getCode());
+
+        } else if (AuditStatusEnum.REJECTED.getCode().equals(auditResult)) {
+            // --- 情况 B: 审批驳回 ---
+            log.info("资产领用申请被驳回：记录ID {}, 原因: {}", recordId, auditRemark);
+
+            // 更新记录状态为已驳回
+            record.setAuditStatus(AuditStatusEnum.REJECTED.getCode());
+
+            // 💡 驳回逻辑：资产表(bus_asset)保持原样，依然是闲置(0)且无领用人
+        } else {
+            throw new BusinessException("操作失败：非法的审批操作类型");
+        }
+
+        // 4. 完善审批轨迹信息
+        // 将管理员的审批意见追加到备注中，方便在 Timeline (时间轴) 中查看
+        String originalRemark = StringUtils.hasText(record.getRemark()) ? record.getRemark() : "无申请备注";
+        String adminNote = StringUtils.hasText(auditRemark) ? auditRemark : "管理员未填写意见";
+
+        record.setRemark(originalRemark + " | [审批意见]: " + adminNote);
+
+        // 5. 保存记录更新
+        assetRecordMapper.updateById(record);
+    }
+
+    @Override
+    public Page<AssetRecordVO> getPendingAuditPage(int current, int size) {
+        Page<AssetRecordVO> page = new Page<>(current, size);
+        // 💡 这里的逻辑是：只查 audit_status = 0 (PENDING) 的记录
+        // 并且需要关联查询资产名和申请人昵称
+        return assetRecordMapper.selectPendingAuditPage(page);
     }
 }

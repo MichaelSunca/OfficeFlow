@@ -2,6 +2,7 @@ package com.officeflow.backend.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.officeflow.backend.common.Result;
+import com.officeflow.backend.dto.AssetAuditDTO;
 import com.officeflow.backend.dto.AssetFormDTO;
 import com.officeflow.backend.dto.AssetOperateDTO;
 import com.officeflow.backend.service.AssetService;
@@ -95,5 +96,30 @@ public class AssetController {
     public Result<List<AssetRecordVO>> getRecords(@PathVariable Long assetId) {
         // 💡 这里不再直接调用 Service.list()，而是调用一个专门查询 VO 的方法
         return Result.success(assetService.getAssetRecords(assetId));
+    }
+
+    /**
+     * 获取待审批列表
+     */
+    @GetMapping("/audit/list")
+    public Result<Page<AssetRecordVO>> getPendingAuditList(
+            @RequestParam(defaultValue = "1") int current,
+            @RequestParam(defaultValue = "10") int size) {
+        // 💡 封装在 Service 层进行分页查询
+        return Result.success(assetService.getPendingAuditPage(current, size));
+    }
+
+    /**
+     * 提交审批结果
+     */
+    @PostMapping("/audit/handle")
+    public Result<Void> handleAudit(@RequestBody AssetAuditDTO auditDTO) {
+        // 💡 调用我们之前写好的 auditClaim 方法
+        assetService.auditClaim(
+                auditDTO.getRecordId(),
+                auditDTO.getAuditResult(),
+                auditDTO.getAuditRemark()
+        );
+        return Result.success();
     }
 }

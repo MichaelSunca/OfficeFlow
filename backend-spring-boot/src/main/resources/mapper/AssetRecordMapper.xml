@@ -22,4 +22,22 @@
         ORDER BY r.create_time DESC
     </select>
 
+    <select id="selectPendingAuditPage" resultType="com.officeflow.backend.vo.AssetRecordVO">
+        SELECT
+            r.id,
+            r.asset_id,
+            r.user_id,
+            r.action_type,
+            r.remark,
+            r.create_time,
+            a.asset_name,
+            a.asset_sn,
+            u.nickname as user_nickname
+        FROM bus_record r
+                 LEFT JOIN bus_asset a ON r.asset_id = a.id
+                 LEFT JOIN sys_user u ON r.user_id = u.id
+        WHERE r.audit_status = 0  -- 💡 只查待审批
+        ORDER BY r.create_time DESC
+    </select>
+
 </mapper>

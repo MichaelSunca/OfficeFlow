@@ -19,6 +19,12 @@
             <el-icon><Box /></el-icon>
             <span>资产台账</span>
           </el-menu-item>
+
+          <el-menu-item index="/audit">
+            <el-icon><Checked /></el-icon>
+            <span>领用审批</span>
+          </el-menu-item>
+
           <el-menu-item index="/user-search">
             <el-icon><Search /></el-icon>
             <span>职员查询</span>
@@ -60,7 +66,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Platform, Box, Search, Expand, Fold } from '@element-plus/icons-vue'
+// 💡 增加了 Checked 图标的导入
+import { Platform, Box, Search, Expand, Fold, Checked } from '@element-plus/icons-vue'
 
 const isCollapse = ref(false)
 const router = useRouter()
