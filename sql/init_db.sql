@@ -69,15 +69,18 @@ CREATE TABLE `bus_asset` (
 -- 5. Create Asset Record Table (资产流转记录表)
 -- -----------------------------------------------------------------------------
 CREATE TABLE `bus_record` (
-                              `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                              `asset_id` BIGINT NOT NULL,
-                              `user_id` BIGINT NOT NULL COMMENT '操作人ID',
-                              `action_type` VARCHAR(20) NOT NULL COMMENT '动作: CLAIM, RETURN, REPAIR, ADD, DELETE',
-                              `old_status` TINYINT DEFAULT NULL COMMENT '变更前状态',
-                              `new_status` TINYINT DEFAULT NULL COMMENT '变更后状态',
-                              `remark` TEXT DEFAULT NULL,
-                              `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资产流转历史记录';
+                              `id`          BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                              `asset_id`    BIGINT NOT NULL COMMENT '关联资产ID',
+                              `user_id`     BIGINT NOT NULL COMMENT '操作人ID（发起人）',
+                              `action_type` VARCHAR(20) NOT NULL COMMENT '动作类型: CLAIM(领用), RETURN(退库), REPAIR(报修), ADD(新增), DELETE(删除)',
+                              `old_status`  TINYINT DEFAULT NULL COMMENT '变更前状态: 0-闲置, 1-领用, 2-维修',
+                              `new_status`  TINYINT DEFAULT NULL COMMENT '变更后状态: 同上',
+                              `audit_status` TINYINT DEFAULT 0 COMMENT '审核状态: 0-待审核, 1-已通过, 2-已驳回',
+                              `remark`      TEXT DEFAULT NULL COMMENT '操作备注',
+                              `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
+                              INDEX `idx_asset_id` (`asset_id`),
+                              INDEX `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资产流转历史记录表';
 
 -- 6. Seed Initial Data
 -- -----------------------------------------------------------------------------
@@ -88,11 +91,6 @@ VALUES
     ('admin', '$2a$10$ZwsWSvK14ulHCw.sxFB/zetSxoknalsSFoEU9PKLBmnuiShN6TRCW', 'System Admin', 'ADMIN', 1),
     ('user01', '$2a$10$ZwsWSvK14ulHCw.sxFB/zetSxoknalsSFoEU9PKLBmnuiShN6TRCW', 'Standard Employee', 'USER', 1);
 
--- 初始资产
--- INSERT INTO `bus_asset` (`asset_name`, `asset_sn`, `category`, `price`, `status`, `location`)
--- VALUES
---     ('MacBook Pro 14"', 'SN2026001', 'Electronics', 250000.00, 0, 'Storage Room A'),
---     ('Herman Miller Aeron', 'SN2026002', 'Furniture', 180000.00, 0, 'Office Area B');
 
 -- -----------------------------------------------------------------------------
 -- Initialization Complete

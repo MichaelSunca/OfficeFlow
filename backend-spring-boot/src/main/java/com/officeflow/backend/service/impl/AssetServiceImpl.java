@@ -12,6 +12,7 @@ import com.officeflow.backend.exception.BusinessException;
 import com.officeflow.backend.mapper.AssetMapper;
 import com.officeflow.backend.mapper.AssetRecordMapper;
 import com.officeflow.backend.service.AssetService;
+import com.officeflow.backend.vo.AssetRecordVO;
 import com.officeflow.backend.vo.AssetVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
 
 /**
  * 资产业务逻辑实现类
@@ -28,7 +31,7 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor // 依赖注入
 public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements AssetService {
 
-    private final AssetRecordMapper recordMapper;
+    private final AssetRecordMapper assetRecordMapper;
 
     /**
      * 重写 save 方法，加入业务校验
@@ -58,18 +61,14 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
     @Override
     @Transactional(rollbackFor = Exception.class) // 开启事务，任何异常都回滚
     public void claimAsset(AssetOperateDTO claimDTO, Long userId) {
-        // 1. 检查资产是否存在
         Asset asset = this.getById(claimDTO.getAssetId());
-        if (asset == null) {
-            throw new BusinessException("操作失败：目标资产不存在");
-        }
+        if (asset == null) throw new BusinessException("操作失败：目标资产不存在");
+        if (asset.getStatus() != 0) throw new BusinessException("该资产当前无法领用");
 
-        // 2. 检查资产状态：只有“闲置(0)”的资产才能被领用
-        if (asset.getStatus() != 0) {
-            throw new BusinessException("操作失败：该资产当前状态无法领用（可能已被领用或维修中）");
-        }
+        Integer oldStatus = asset.getStatus();
+        Integer newStatus = 1; // 领用中
 
-        // 3. 更新资产状态
+        // 更新资产状态
         asset.setStatus(1); // 1 = 领用中
         asset.setUserId(userId);
         this.updateById(asset);
@@ -79,10 +78,12 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         record.setAssetId(asset.getId());
         record.setUserId(userId);
         record.setActionType("APPLY");
+        record.setOldStatus(oldStatus); // 赋值旧状态 (0)
+        record.setNewStatus(newStatus); // 赋值新状态 (1)
         record.setRemark(claimDTO.getRemark());
         record.setAuditStatus(1); // 简单起见，这里设置为直接通过
 
-        recordMapper.insert(record);
+        assetRecordMapper.insert(record);
 
         // 如果上面 recordMapper 插入报错，事务会保证 asset 的状态也会变回 0
     }
@@ -90,15 +91,13 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void returnAsset(AssetOperateDTO returnDTO, Long userId) {
-        // 1. 获取并校验是否存在
         Asset asset = this.getById(returnDTO.getAssetId());
         if (asset == null) throw new BusinessException("资产不存在");
-
-        // 2. 状态校验
         if (asset.getStatus() != 1) throw new BusinessException("该资产不在领用状态");
-
-        // 3. 归属校验
         if (!userId.equals(asset.getUserId())) throw new BusinessException("你不是当前领用人");
+
+        Integer oldStatus = asset.getStatus();
+        Integer newStatus = 0; // 闲置
 
         // 4. 执行更新（显式清空用户ID）
         this.update(new LambdaUpdateWrapper<Asset>()
@@ -112,9 +111,11 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         record.setAssetId(asset.getId());
         record.setUserId(userId);
         record.setActionType("RETURN");
+        record.setOldStatus(oldStatus); // 赋值旧状态 (1)
+        record.setNewStatus(newStatus); // 赋值新状态 (0)
         record.setRemark(returnDTO.getRemark());
         record.setAuditStatus(1);
-        recordMapper.insert(record);
+        assetRecordMapper.insert(record);
     }
 
     @Override
@@ -169,8 +170,18 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
     }
 
     @Override
-    public Page<AssetVO> getAssetListPage(int current, int size) {
+    public Page<AssetVO> getAssetListPage(int current, int size, String assetName, Integer status) {
+        // 1. 创建分页对象
         Page<AssetVO> page = new Page<>(current, size);
-        return baseMapper.selectAssetPage(page);
+
+        // 2. 调用 Mapper 执行关联查询
+        // 这里建议去 XML 或使用 MyBatis-Plus 的自定义查询
+        return baseMapper.selectAssetPage(page, assetName, status);
+    }
+
+    @Override
+    public List<AssetRecordVO> getAssetRecords(Long assetId) {
+        // 建议在 AssetRecordMapper 中写一个专门的 SQL 关联查询
+        return assetRecordMapper.selectRecordListWithUserInfo(assetId);
     }
 }

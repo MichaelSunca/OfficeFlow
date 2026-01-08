@@ -60,7 +60,7 @@ Content-Type: application/json
 }
 
 ### 更新资产 - 成功示例
-PUT http://localhost:8080/api/assets/update
+POST http://localhost:8080/api/assets/update
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 
@@ -75,7 +75,7 @@ Authorization: Bearer {{auth_token}}
 }
 
 ### 更新资产 - 失败示例 (触发 @NotNull 校验，没带 ID)
-PUT http://localhost:8080/api/assets/update
+POST http://localhost:8080/api/assets/update
 Content-Type: application/json
 
 {

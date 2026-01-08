@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.officeflow.backend.entity.Asset;
 import com.officeflow.backend.vo.AssetVO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 /**
@@ -18,10 +19,9 @@ public interface AssetMapper extends BaseMapper<Asset> {
     /**
      * 分页查询资产及用户信息
      */
-    @Select("SELECT a.*, u.username as user_name, u.nickname as user_nickname " +
-            "FROM bus_asset a " +
-            "LEFT JOIN sys_user u ON a.user_id = u.id " +
-            "WHERE a.status != -1 " + // -1 是已报废/删除
-            "ORDER BY a.create_time DESC")
-    Page<AssetVO> selectAssetPage(Page<AssetVO> page);
+    Page<AssetVO> selectAssetPage(
+            @Param("page") Page<AssetVO> page,
+            @Param("assetName") String assetName,
+            @Param("status") Integer status
+    );
 }

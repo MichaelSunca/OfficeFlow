@@ -28,6 +28,7 @@ mybatis-plus:
     db-config:
       # 开启主键自动增长（对应你建表时的 AUTO_INCREMENT）
       id-type: auto
+  mapper-locations: classpath*:/mapper/**/*.xml
 
 # 日志配置
 logging:

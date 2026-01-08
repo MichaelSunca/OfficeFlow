@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.officeflow.backend.mapper.AssetMapper">
+
+    <select id="selectAssetPage" resultType="com.officeflow.backend.vo.AssetVO">
+        SELECT
+        a.*,
+        u.username as user_name,
+        u.nickname as user_nickname
+        FROM bus_asset a
+        LEFT JOIN sys_user u ON a.user_id = u.id
+        <where>
+            a.del_flag = 0
+            <if test="assetName != null and assetName != ''">
+                AND a.asset_name LIKE CONCAT('%', #{assetName}, '%')
+            </if>
+            <if test="status != null">
+                AND a.status = #{status}
+            </if>
+        </where>
+        ORDER BY a.create_time DESC
+    </select>
+
+</mapper>

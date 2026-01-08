@@ -3,7 +3,28 @@
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <span class="title">资产台账</span>
+          <div class="left">
+            <span class="title">资产台账</span>
+            <el-input
+                v-model="searchQuery.assetName"
+                placeholder="搜索资产名称"
+                style="width: 200px; margin-left: 20px"
+                clearable
+                @clear="fetchData"
+                @keyup.enter="fetchData"
+            />
+            <el-select
+                v-model="searchQuery.status"
+                placeholder="状态"
+                clearable
+                style="width: 120px; margin-left: 10px"
+                @change="fetchData"
+            >
+              <el-option label="闲置" :value="0" />
+              <el-option label="领用中" :value="1" />
+              <el-option label="维修" :value="2" />
+            </el-select>
+          </div>
           <el-button type="primary" :icon="Plus" @click="handleAdd">新增资产</el-button>
         </div>
       </template>
@@ -31,7 +52,7 @@
 
         <el-table-column prop="location" label="存放地点" min-width="150" />
 
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button
                 link
@@ -45,13 +66,19 @@
             <el-button
                 link
                 type="warning"
-                v-else
+                v-else-if="row.status === 1"
                 @click="handleTransfer(row, 'RETURN')"
             >
               退库
             </el-button>
 
+            <el-button link type="success" @click="timelineRef.open(row.id)">
+              轨迹
+            </el-button>
+
             <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+
+            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -68,44 +95,58 @@
         />
       </div>
     </el-card>
+
+    <AssetDialog ref="assetDialogRef" @refresh="fetchData" />
+    <AssetTimeline ref="timelineRef" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from "element-plus"
-// 💡 导入封装好的 API 和类型
+import AssetDialog from './components/AssetDialog.vue'
+import AssetTimeline from './components/AssetTimeline.vue'
 import {
   getAssetListApi,
   claimAssetApi,
   returnAssetApi,
+  deleteAssetApi,
   type AssetVO
-} from "@/api/asset" // 省略 .ts 后缀通常更规范
+} from "@/api/asset"
 
-// --- 1. 状态变量 ---
+// --- 状态变量 ---
 const loading = ref(false)
 const tableData = ref<AssetVO[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
+const assetDialogRef = ref()
+const timelineRef = ref()
 
-// 状态映射表：用于标签渲染 [0:闲置, 1:领用中, 2:维修]
+// 搜索查询参数
+const searchQuery = reactive({
+  assetName: '',
+  status: null as number | null
+})
+
 const statusMap: Record<number, { text: string, type: 'success' | 'warning' | 'danger' | 'info' }> = {
   0: { text: '闲置', type: 'success' },
   1: { text: '领用中', type: 'warning' },
-  2: { text: '维修', type: 'danger' }
+  2: { text: '维修', type: 'danger' },
+  3: { text: '报废', type: 'info' }
 }
 
-// --- 2. 核心业务逻辑 ---
+// --- 核心业务逻辑 ---
 
-// 获取分页列表
 const fetchData = async () => {
   loading.value = true
   try {
     const res = await getAssetListApi({
       current: currentPage.value,
-      size: pageSize.value
+      size: pageSize.value,
+      assetName: searchQuery.assetName,
+      status: searchQuery.status
     })
     tableData.value = res.records
     total.value = res.total
@@ -123,31 +164,45 @@ const handleTransfer = async (row: AssetVO, type: 'CLAIM' | 'RETURN') => {
   const apiFunc = isClaim ? claimAssetApi : returnAssetApi
 
   try {
-    // 调出带输入框的弹窗，强制要求或提示输入备注
     const { value: remark } = await ElMessageBox.prompt(
         `请输入${actionText}资产 [${row.assetName}] 的备注信息`,
         `${actionText}确认`,
         {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
-          inputPlaceholder: '备注信息（如：领用地点、当前状态等）',
+          inputPlaceholder: '备注信息（如：领用地点、用途等）',
         }
     )
 
-    // 发送请求
     await apiFunc({
       assetId: row.id,
       remark: remark || ''
     })
 
     ElMessage.success(`${actionText}成功`)
-    fetchData() // 刷新列表数据
+    fetchData()
   } catch (error) {
-    // Catch 块捕获的是用户点击“取消”或关闭弹窗，无需额外提示
+    // 用户取消操作
   }
 }
 
-// --- 3. 交互与分页回调 ---
+const handleDelete = (row: AssetVO) => {
+  ElMessageBox.confirm(
+      `确定要删除资产 [${row.assetName}] 吗？删除后可在轨迹中追溯。`,
+      '安全警告',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+  ).then(async () => {
+    await deleteAssetApi(row.id)
+    ElMessage.success('资产已安全删除')
+    fetchData()
+  }).catch(() => {})
+}
+
+// --- 交互回调 ---
 
 const handleSizeChange = (val: number) => {
   pageSize.value = val
@@ -159,16 +214,12 @@ const handleCurrentChange = (val: number) => {
   fetchData()
 }
 
-// 新增资产
 const handleAdd = () => {
-  console.log('点击了新增资产')
-  // 下一步：实现新增弹窗
+  assetDialogRef.value?.open()
 }
 
-// 编辑资产
 const handleEdit = (row: AssetVO) => {
-  console.log('正在编辑资产:', row.assetName)
-  // 下一步：实现编辑回显逻辑
+  assetDialogRef.value?.open(row)
 }
 
 onMounted(() => {
@@ -178,13 +229,17 @@ onMounted(() => {
 
 <style scoped>
 .asset-container {
-  /* 已经在 Layout 内部，此处主要控制内间距 */
   padding: 0;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+}
+
+.card-header .left {
+  display: flex;
   align-items: center;
 }
 
@@ -205,7 +260,7 @@ onMounted(() => {
   font-style: italic;
 }
 
-/* 深度选择器，微调表格表头样式 */
+/* 深度选择器修改表头背景色 */
 :deep(.el-table th) {
   background-color: #f5f7fa !important;
   color: #606266;

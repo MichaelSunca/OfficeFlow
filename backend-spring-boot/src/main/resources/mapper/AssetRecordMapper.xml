@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.officeflow.backend.mapper.AssetRecordMapper">
+
+    <select id="selectRecordListWithUserInfo" resultType="com.officeflow.backend.vo.AssetRecordVO">
+        SELECT
+            r.id,
+            r.asset_id,
+            r.user_id,
+            r.action_type,
+            r.old_status,
+            r.new_status,
+            r.audit_status,
+            r.remark,
+            r.create_time,
+            u.nickname AS userNickname,
+            a.asset_name AS assetName
+        FROM bus_record r
+                 LEFT JOIN sys_user u ON r.user_id = u.id
+                 LEFT JOIN bus_asset a ON r.asset_id = a.id
+        WHERE r.asset_id = #{assetId}
+        ORDER BY r.create_time DESC
+    </select>
+
+</mapper>

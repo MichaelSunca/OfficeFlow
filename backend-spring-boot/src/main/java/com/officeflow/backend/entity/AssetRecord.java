@@ -19,6 +19,16 @@ public class AssetRecord {
      */
     private String actionType;
 
+    /**
+     * 变更前状态
+     */
+    private Integer oldStatus;
+
+    /**
+     * 变更后状态
+     */
+    private Integer newStatus;
+
     private String remark;
 
     /**
