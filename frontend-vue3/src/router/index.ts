@@ -3,27 +3,28 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 // 1. 定义路由映射
 const routes: Array<RouteRecordRaw> = [
     {
-        path: '/',
-        redirect: '/assets'
-    },
-    {
         path: '/login',
         name: 'Login',
-        component: () => import('../views/login/index.vue'),
-        meta: { requiresAuth: false }
+        component: () => import('@/views/login/index.vue')
     },
     {
-        path: '/assets',
-        name: 'Assets',
-        component: () => import('../views/assets/index.vue'),
-        meta: { requiresAuth: true }
-    },
-    //用户搜索模块
-    {
-        path: '/user-search',
-        name: 'UserSearch',
-        component: () => import('../views/user/UserSearch.vue'), // 确保文件路径正确
-        meta: { requiresAuth: true } // 搜索用户通常也需要登录
+        path: '/',
+        component: () => import('@/layout/index.vue'),
+        redirect: '/assets',
+        children: [
+            {
+                path: 'assets',
+                name: 'Assets',
+                component: () => import('@/views/assets/index.vue'),
+                meta: { title: '资产台账' }
+            },
+            {
+                path: 'user-search',
+                name: 'UserSearch',
+                component: () => import('@/views/user/UserSearch.vue'),
+                meta: { title: '职员查询' }
+            }
+        ]
     }
 ]
 
