@@ -359,30 +359,9 @@ npm run dev
 
 ---
 
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
----
-
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
-
----
-
-## 👨‍💻 作者
-
-**OfficeFlow Team**
-
-- 项目初衷：通过现代化的技术栈，解决企业行政资产管理混乱的痛点
-- 技术沉淀：展示在复杂生活与高效工作之间保持卓越技术输出的能力
 
 ---
 
