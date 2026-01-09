@@ -4,70 +4,64 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Map;
 
 @Component
 public class JwtUtils {
 
-    // 实际项目中应放在 application.yml 中，且长度至少 32 位
-    private static final String SECRET_KEY = "OfficeFlow_Secret_Key_For_Test_Temp";
+    // 确保字符串足够长，直接初始化为常量
+    private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(
+            "OfficeFlow_Secure_Secret_Key_For_JWT_HS256_32_Bytes".getBytes(StandardCharsets.UTF_8)
+    );
+
     // Token 有效期：24 小时
     private static final long EXPIRATION_TIME = 24 * 60 * 60 * 1000;
 
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
-    }
-
     /**
      * 生成 Token
-     * @param username 用户名
-     * @return JWT Token 字符串
      */
-    public String createToken(String username) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
-
-        /*
-         * · 标准声明 (Reserved Claims)：这是 JWT 协议预留的字段。
-         *   · sub (Subject)：通常放用户名或用户 ID（对应代码里的 .subject(username)）。
-         *   · iat (Issued At)：签发时间。
-         *   · exp (Expiration)：过期时间。
-         * · 自定义声明 (Custom Claims)：你可以根据业务需要往里塞任何信息。
-         * 例如：.claim("role", "ADMIN")。这样你解析 Token 时，不需要查数据库就能立刻知道这个人的角色。
-         */
-
+    public String createToken(Map<String, Object> claims) {
         return Jwts.builder()
-                .subject(username)                 // 将用户名存入载荷 (Subject)
-                .issuedAt(now)                     // 签发时间
-                .expiration(expiryDate)            // 过期时间
-                .signWith(getSigningKey())         // 签名算法
+                .claims(claims)                // 载荷 (userId, role 等)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(SECRET_KEY)          // 直接使用静态常量 Key
                 .compact();
     }
 
     /**
      * 解析并验证 Token
-     * @param token 前端传来的 Token
-     * @return 包含用户信息的 Claims
      */
     public Claims parseToken(String token) {
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7); // 截取 "Bearer " 之后的真正 JWT 内容
+        // 非空判断，防止空指针
+        if (!StringUtils.hasText(token)) {
+            throw new RuntimeException("Token 不能为空");
+        }
+
+        // 处理前端可能传来的 Bearer 前缀
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
         }
 
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(SECRET_KEY)
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseSignedClaims(token)      // 解析
+                .getPayload();                 // 获取数据
     }
 
     /**
-     * 从 Token 中获取用户名
+     * 从 Token 中获取特定数据 (示例：用户名)
+     * 注意：你在 AuthService 存的是 "username" 而不是标准 subject，所以用 get("username")
      */
     public String getUsernameFromToken(String token) {
-        return parseToken(token).getSubject();
+        Claims claims = parseToken(token);
+        // 存的时候是 claims.put("username", ...), 那么这里就要 get("username")
+        return claims.get("username", String.class);
     }
 }

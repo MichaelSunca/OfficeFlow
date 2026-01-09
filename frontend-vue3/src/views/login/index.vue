@@ -46,8 +46,10 @@ import { ref, reactive } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { http } from '@/utils/request'
 import { useRouter } from 'vue-router' // 引入路由跳转
+import { useUserStore } from '@/store/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const loginRef = ref<FormInstance>() // 获得表单实例的 TS 类型
 const loading = ref(false)
@@ -71,15 +73,12 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true
       try {
-        // 使用封装好的 http。注意：我们在 request.ts 拦截器里已经处理过 code === 200
-        // 所以这里返回的 data 直接就是 token 字符串
         const res = await http.post<any>('/auth/login', loginForm)
-
-        localStorage.setItem('token', res.token)
+        const token = res.token;
+        // 执行 Store 里的方法：解析 Token 并存入角色和 ID
+        userStore.loginSuccess(token)
         ElMessage.success('登录成功！欢迎回来')
-
-        // 关键：登录成功后跳转到搜索页
-        router.push('/user-search')
+        router.push('/')
 
       } catch (error) {
         // 拦截器已经报过 ElMessage.error 了，这里可以保持静默或处理 loading

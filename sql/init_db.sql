@@ -18,21 +18,40 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `bus_record`;
 DROP TABLE IF EXISTS `bus_asset`;
 DROP TABLE IF EXISTS `sys_user`;
+DROP TABLE IF EXISTS `sys_role`;
 SET FOREIGN_KEY_CHECKS = 1;
+
+--- -----------------------------------------------------------------------------
+-- 角色表
+-- -----------------------------------------------------------------------------
+CREATE TABLE `sys_role` (
+                            `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '角色 ID',
+                            `role_name` VARCHAR(50) NOT NULL COMMENT '角色名称 (展示用，如：管理员)',
+                            `role_key` VARCHAR(50) NOT NULL UNIQUE COMMENT '角色标识 (代码判权用，如：ADMIN)',
+                            `status` TINYINT DEFAULT 1 COMMENT '角色状态: 1=正常, 0=禁用',
+                            `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
 
 -- 3. Create System User Table
 -- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `sys_user`;
 CREATE TABLE `sys_user` (
                             `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
-                            `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '登录账号或工号',
+                            `username` VARCHAR(50) NOT NULL COMMENT '登录账号或工号',
                             `password` VARCHAR(100) NOT NULL COMMENT 'BCrypt 加密密码',
                             `nickname` VARCHAR(50) DEFAULT NULL COMMENT '员工姓名',
-                            `role` VARCHAR(20) DEFAULT 'USER' COMMENT '角色: ADMIN, USER',
+                            `avatar` VARCHAR(255) DEFAULT 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png' COMMENT '用户头像',
+                            `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
+                            `phone` VARCHAR(20) DEFAULT NULL COMMENT '联系电话',
+                            `role_id` BIGINT NOT NULL DEFAULT 2 COMMENT '角色ID: 1=ADMIN, 2=USER',
+                            `status` TINYINT DEFAULT 1 COMMENT '账号状态: 1=正常, 0=禁用',
+                            `del_flag` TINYINT DEFAULT 0 COMMENT '逻辑删除: 0=未删除, 1=已删除',
                             `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                             `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-                            `status` TINYINT DEFAULT 1 COMMENT '账号状态: 1=正常, 0=禁用',
                             PRIMARY KEY (`id`),
-                            INDEX `idx_username` (`username`)
+                            UNIQUE INDEX `uk_username` (`username`),
+                            INDEX `idx_role_id` (`role_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户信息表';
 
 -- -----------------------------------------------------------------------------
@@ -85,12 +104,17 @@ CREATE TABLE `bus_record` (
 -- 6. Seed Initial Data
 -- -----------------------------------------------------------------------------
 
--- 系统用户 (密码均为 123456)
-INSERT INTO `sys_user` (`username`, `password`, `nickname`, `role`, `status`)
-VALUES
-    ('admin', '$2a$10$ZwsWSvK14ulHCw.sxFB/zetSxoknalsSFoEU9PKLBmnuiShN6TRCW', 'System Admin', 'ADMIN', 1),
-    ('user01', '$2a$10$ZwsWSvK14ulHCw.sxFB/zetSxoknalsSFoEU9PKLBmnuiShN6TRCW', 'Standard Employee', 'USER', 1);
+-- 为 sys_role 表插入初始化角色数据
+INSERT INTO `sys_role` (`id`, `role_name`, `role_key`, `status`)
+VALUES 
+    (1, '超级管理员', 'ADMIN', 1),
+    (2, '普通员工', 'USER', 1);
 
+-- 系统用户 (密码均为 123456)
+INSERT INTO `sys_user` (`username`, `password`, `nickname`, `role_id`, `status`)
+VALUES
+    ('admin', '$2a$10$ZwsWSvK14ulHCw.sxFB/zetSxoknalsSFoEU9PKLBmnuiShN6TRCW', '超级管理员', 1, 1),
+    ('user01', '$2a$10$ZwsWSvK14ulHCw.sxFB/zetSxoknalsSFoEU9PKLBmnuiShN6TRCW', '普通员工', 2, 1);
 
 -- -----------------------------------------------------------------------------
 -- Initialization Complete

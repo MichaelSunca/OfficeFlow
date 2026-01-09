@@ -11,18 +11,21 @@ const routes: Array<RouteRecordRaw> = [
         path: '/',
         component: () => import('@/layout/index.vue'),
         redirect: '/assets',
+        meta: {
+            requiresAuth: true,
+        },
         children: [
             {
                 path: 'assets',
                 name: 'Assets',
                 component: () => import('@/views/assets/index.vue'),
-                meta: { title: '资产台账' }
+                meta: { title: '资产台账', requiresAuth: true, }
             },
             {
                 path: 'user-search',
                 name: 'UserSearch',
                 component: () => import('@/views/user/UserSearch.vue'),
-                meta: { title: '职员查询' }
+                meta: { title: '职员查询', requiresAuth: true, }
             },
             {
                 path: 'audit',
@@ -31,6 +34,7 @@ const routes: Array<RouteRecordRaw> = [
                 meta: {
                     title: '领用审批',
                     icon: 'Checked',
+                    requiresAuth: true,
                     // 如果有权限控制，可以在这里加 roles: ['admin']
                 }
             }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.officeflow.backend.entity.User;
 import com.officeflow.backend.mapper.UserMapper;
 import com.officeflow.backend.security.LoginUser;
+import com.officeflow.backend.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class CustomUserDetailsService implements UserDetailsService {
+public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserMapper userMapper;
 
@@ -23,9 +24,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         System.out.println("密码 " + new BCryptPasswordEncoder().encode("123456"));
 
         // 1. 使用 MyBatis-Plus 查询数据库
-        User user = userMapper.selectOne(
-                new LambdaQueryWrapper<User>().eq(User::getUsername, username)
-        );
+        UserVO user = userMapper.selectUserByName(username);
 
         // 2. 如果查不到，抛出异常
         if (user == null) {

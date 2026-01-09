@@ -25,9 +25,10 @@ public class User {
     private String nickname;
 
     /**
-     * Role can be 'ADMIN' or 'USER'
+     *  1 ADMIN
+     *  2 USER
      */
-    private String role;
+    private String roleId;
 
     /**
      * Automatically mapped to 'create_time' (CamelCase to Under_score)

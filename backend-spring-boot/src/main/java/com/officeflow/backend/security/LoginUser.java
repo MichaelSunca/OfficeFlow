@@ -1,6 +1,6 @@
 package com.officeflow.backend.security;
 
-import com.officeflow.backend.entity.User;
+import com.officeflow.backend.vo.UserVO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,7 +16,7 @@ import java.util.Collections;
 @NoArgsConstructor
 public class LoginUser implements UserDetails {
 
-    private User user; // 你的数据库实体类
+    private UserVO user; // 你的数据库实体类
 
     /**
      * 业务代码里直接调这个拿 ID，非常方便
@@ -28,7 +28,7 @@ public class LoginUser implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // 把 sys_user 表里的 role 字段转为权限对象
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRoleKey()));
     }
 
     @Override

@@ -11,6 +11,7 @@ import com.officeflow.backend.vo.AssetRecordVO;
 import com.officeflow.backend.vo.AssetVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,8 +31,8 @@ public class AssetController {
     public Result<Page<AssetVO>> list(
             @RequestParam(defaultValue = "1") int current,
             @RequestParam(defaultValue = "10") int size,
-            String assetName,  // 💡 接收前端传来的搜索词
-            Integer status     // 💡 接收前端传来的状态过滤
+            String assetName,  // 接收前端传来的搜索词
+            Integer status     // 接收前端传来的状态过滤
     ) {
         // 这里的 getAssetListPage 需要传搜索参数进去
         return Result.success(assetService.getAssetListPage(current, size, assetName, status));
@@ -113,8 +114,9 @@ public class AssetController {
      * 提交审批结果
      */
     @PostMapping("/audit/handle")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> handleAudit(@RequestBody AssetAuditDTO auditDTO) {
-        // 💡 调用我们之前写好的 auditClaim 方法
+        // 调用我们之前写好的 auditClaim 方法
         assetService.auditClaim(
                 auditDTO.getRecordId(),
                 auditDTO.getAuditResult(),
